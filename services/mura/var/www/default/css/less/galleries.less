@@ -1,0 +1,44 @@
+.mura-gallery {
+
+	ul {
+		list-style: none;
+		margin: 0;
+		overflow: hidden;
+
+		li {
+			/* width : auto; Width is set dynamically in /includes/display_objects/gallery/htmlhead/gallery.cfm */
+			/* Height is being set by jQuery based on the rendered height of the <li> to avoid float issues. */
+			display: inline-block;
+			list-style: none;
+			overflow: hidden;
+
+			img {
+				display: block;
+				margin: 0 auto;
+			}
+			.rating.stars img{
+				display: inline;
+			}
+		}
+	}
+
+	// DL layout
+	dl {
+		margin: 0 auto;
+		padding: 0;
+
+		dt {
+			margin: 0 0 .25em;
+			padding: 0;
+		}
+
+		dd {
+			background: transparent;
+			float: none;
+			line-height: 1.25;
+			margin: 0;
+			padding: 0;
+		}
+	}
+
+}

@@ -1,0 +1,155 @@
+.mura-index  {
+	margin: 2em 0;
+
+	dl {
+		margin: 1.3em 0 1em;
+		position: relative;
+		overflow: hidden;
+	}
+
+	dl.last,
+	li.last {
+		border: 0;
+		padding: 0;
+	}
+
+	dt, li h3 {
+		font-size: 1.4em;
+		margin-bottom: 0.25em;
+	}
+	
+	dd {
+		margin-left: 0;
+	}
+
+	> ul {
+		list-style: none;
+		margin: 0 0 2em;
+		position: relative;
+
+		li {
+			margin: 1.3em 0 1em;
+			position: relative;
+		}
+	}
+
+	.releaseDate {
+		font-weight: normal;
+		margin-bottom: .5em;
+	}
+
+	.summary .readMore,
+	.readMore {
+		font-size: .9em;
+		}
+
+	.credits,
+	.comments,
+	.tags,
+	.rating {
+		font-size: 1em;
+		float: left;
+		margin-bottom: 0;
+		padding: 0 .75em 0 0;
+	}
+}
+
+// Side Index
+.sidebar .mura-index,
+aside .mura-index {
+	margin: 0 0 2em 0;
+
+	dl.first,
+	li.first {
+		margin-top: 0;
+		padding-top: 0;
+	}
+
+	dt, li h3 {
+		font-size: 16px;
+		margin: 0 0 .25em 0;
+		}
+
+	.credits,
+	.comments,
+	.tags,
+	.rating {
+		float: none;
+		margin-bottom: .35em;
+		padding: 0;
+	}
+}
+//end Side Index
+
+
+// Content Index
+.content .mura-index,
+section .mura-index {
+	border-top: 1px solid #ccc;
+	padding-top: 1em;
+}
+
+
+// Has Image
+.hasImage .image {
+	margin: 0 1em 0 0;
+	left: 0;
+	position: absolute;
+	top: 0;
+}
+
+.sidebar .hasImage,
+aside .hasImage {
+	min-height: 0;
+	padding-left: 0;
+}
+
+.credits,
+.comments,
+.tags,
+.rating {
+	float: left;
+	margin-bottom: 0;
+	padding: 0 .75em 0 0;
+	font-size: 1em;
+	}
+
+.sidebar .credits,
+.sidebar .comments,
+.sidebar .tags,
+.sidebar .rating,
+aside .credits,
+aside .comments,
+aside .tags,
+aside .rating {
+	float: none;
+	margin-bottom: .35em;
+	padding: 0;
+	}
+
+.rating {	
+		position: relative;
+		min-width: 150px;
+		min-height: 27px;
+		background-repeat: no-repeat;
+		background-position: 0 50%;
+		span {
+			position: absolute;
+			left: -9999px;
+		}
+
+		&.zero { background-image: url(../includes/display_objects/rater/images/star_zero.png); }
+		&.one { background-image: url(../includes/display_objects/rater/images/star_one.png); }
+		&.onehalf { background-image: url(../includes/display_objects/rater/images/star_onehalf.png); }
+		&.two { background-image: url(../includes/display_objects/rater/images/star_two.png); }
+		&.twohalf { background-image: url(../includes/display_objects/rater/images/star_twohalf.png); }
+		&.three { background-image: url(../includes/display_objects/rater/images/star_three.png); }
+		&.threehalf { background-image: url(../includes/display_objects/rater/images/star_threehalf.png); }
+		&.four { background-image: url(../includes/display_objects/rater/images/star_four.png); }
+		&.fourhalf { background-image: url(../includes/display_objects/rater/images/star_fourhalf.png); }
+		&.five { background-image: url(../includes/display_objects/rater/images/star_five.png); }
+}
+
+.mura-index .credits {
+	color: #666;
+	}

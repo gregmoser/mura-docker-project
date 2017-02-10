@@ -1,0 +1,84 @@
+#mura-preview-device-selector {
+	background: @grayLight;
+	display: inline-block;
+	padding: 0 4px 4px !important;
+	.border-bottom-radius(6px);
+	position: absolute;
+	top: 0px;
+	left: 50%;
+	min-width: 108px;
+	margin-left: -54px;
+	.bold-font;
+	font-size: 12px;
+	text-align: center;
+	z-index: 100000;
+	//box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+	
+		> p {
+			text-align: center;
+			font-weight: normal;
+			color: @grayDark;
+			margin: 0 0 4px 0;
+			line-height: 12px;
+			}
+
+		> a {
+			//background: @grayDark;
+			display: inline-block;
+			font-size: 20px;
+			padding: 0 4px;
+			//margin-right: 2px;
+			//border-radius: 4px;
+			line-height: 1em;
+			color: darken(@gray,5%);
+			//width: 18px;
+			height: 18px;
+			overflow: hidden;
+			cursor: pointer;
+			
+			&.mura-device-standard {}
+			&.mura-device-tablet {}
+			&.mura-device-tablet-landscape {}
+			&.mura-device-phone {}
+			&.mura-device-phone-landscape {}
+			
+			&:hover, &.active {
+				text-decoration: none;
+				//background: @grayDarker;
+				color: @grayDark;
+				}
+			
+			&:last-child {
+				margin: 0;
+				}
+			
+			}
+	
+	}
+	
+#frontEndToolsModalBody #mura-preview-device-selector {
+	background: transparent;
+	display: inline-block;
+	padding: 4px 4px;
+	.border-radius(0);
+	position: absolute;
+	top: -40px;
+	left: 50%;
+	width: 160px;
+	margin-left: -80px;
+	//.box-shadow(0px 0px 6px rgba(0,0,0,.85));
+	
+	a {
+		padding: 0 5px;
+	}
+	
+	#preview-close {
+		color: #666;
+    font-size: 14px;
+		margin-left: .35em;
+    position: absolute;
+		padding-left: .35em;
+    top: -2px;
+		}
+	
+	}

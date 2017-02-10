@@ -1,0 +1,131 @@
+.nav-module-specific {
+	margin-bottom: @baseLineHeight+2px;  // +2px makes up for shadow
+	margin-left: 0;
+	clear: both;
+	display: block;
+	
+	.btn-group { }
+	
+	.btn {
+		text-shadow: 0 1px rgba(255,255,255,1.0);
+		padding: 6px 12px;
+		border-color: @btnBorder @btnBorder darken(@btnBorder, 10%);
+			
+		i {
+			color: darken(@gray,40%);
+			text-shadow: 0 1px rgba(255,255,255,1.0);
+			font-size: 13px;
+		}
+	}
+	}
+
+#btn-module-specific {
+	margin-bottom: @baseLineHeight;
+	}
+
+// Pills
+
+.navSort {
+	margin-bottom: @baseLineHeight;
+	height: 32px;
+	}
+
+.nav-pills {
+
+	margin-bottom: @baseLineHeight;
+	
+	li a { background: @grayLighter; }
+		
+	li a.active, li a:hover { background: @grayLight; }
+		
+	}
+
+// Pagination
+.mura-results-wrapper {
+
+	.clearfix;
+	
+	.search-showing {
+		clear: left;
+		height: 26px;
+		line-height: 26px;
+		margin: 0 2em 0 0;
+		}	
+}
+
+.pagination {
+	
+	.pull-right;
+	margin: 0 0 18px !important;
+	
+	li {
+		
+		}
+		
+	li a {
+		padding: 0 8px;
+		line-height: 26px;		
+		}
+	
+	li a.active {
+		color: @grayDark;
+		}	
+}
+
+.view-controls {
+	.btn-group {
+		margin-bottom: @baseLineHeight;
+	}
+}
+// Zoom/Breadcrumb Nav
+
+
+.navZoom {
+	.breadcrumb;
+	background: none;
+	}
+
+.navZoom.alt {
+	list-style: none;
+	margin: 0 0 @baseLineHeight !important;
+	padding: 6px 15px !important;
+	clear: both;
+	.border-radius(3px) !important;
+	.box-shadow(@globalDropShadow);
+	.btn;
+	.buttonBackground(@btnBackground, @btnBackgroundHighlight, @grayDark, 0 1px 1px rgba(255,255,255,.75));
+	border: 0;
+}
+
+#content .alert .navZoom {
+	background: none;
+	padding: 0;
+	margin: 0;
+	font-size: 12px;
+}
+
+.navZoom li {
+	display: inline;
+	margin: 0;
+	padding: 0;
+}
+
+.navZoom li.last a {
+	font-weight: bold;
+}
+
+.navZoom li a {
+	padding: 2px 0;
+}
+
+.alert p {
+	margin-bottom: .5em;
+}
+
+h2 + .navZoom {
+	margin-top: 2.3em;
+}
+
+.navZoom + form  {
+	margin-top: 1.35em;
+}

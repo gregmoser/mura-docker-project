@@ -1,0 +1,27 @@
+version: '2'
+services:
+  mura:
+    build: ./services/mura
+    environment:
+     MYSQL_USERNAME : root
+     MYSQL_PASSWORD : LOCAL_DEV_NOT_SECURE
+     MYSQL_HOST : mysql
+     MYSQL_PORT : 3306
+     MYSQL_DATABASE : mura
+     LUCEE_PASSWORD : LOCAL_DEV_NOT_SECURE
+     LUCEE_JAVA_OPTS : -Xms512m -Xmx512m
+    links:
+     - mysql
+    ports:
+     - "80:8888"
+    volumes:
+     - ./services/mura/var/www:/var/www
+  mysql:
+    build: ./services/mysql
+    environment:
+     MYSQL_ROOT_PASSWORD : LOCAL_DEV_NOT_SECURE
+     MYSQL_DATABASE : mura
+    ports:
+     - "3306:3306"
+    volumes:
+     - ./services/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d

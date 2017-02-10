@@ -1,0 +1,919 @@
+<!--- This file is part of Mura CMS.
+
+Mura CMS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, Version 2 of the License.
+
+Mura CMS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Mura CMS. If not, see <http://www.gnu.org/licenses/>.
+
+Linking Mura CMS statically or dynamically with other modules constitutes the preparation of a derivative work based on
+Mura CMS. Thus, the terms and conditions of the GNU General Public License version 2 ("GPL") cover the entire combined work.
+
+However, as a special exception, the copyright holders of Mura CMS grant you permission to combine Mura CMS with programs
+or libraries that are released under the GNU Lesser General Public License version 2.1.
+
+In addition, as a special exception, the copyright holders of Mura CMS grant you permission to combine Mura CMS with
+independent software modules (plugins, themes and bundles), and to distribute these plugins, themes and bundles without
+Mura CMS under the license of your choice, provided that you follow these specific guidelines:
+
+Your custom code
+
+• Must not alter any default objects in the Mura CMS database and
+• May not alter the default display of the Mura CMS logo within Mura CMS and
+• Must not alter any files in the following directories.
+
+ /admin/
+ /tasks/
+ /config/
+ /requirements/mura/
+ /Application.cfc
+ /index.cfm
+ /MuraProxy.cfc
+
+You may copy and distribute Mura CMS with a plug-in, theme or bundle that meets the above guidelines as a combined work
+under the terms of GPL for Mura CMS, provided that you include the source code of that other code when and as the GNU GPL
+requires distribution of source code.
+
+For clarity, if you create a modified version of Mura CMS, you are not obligated to grant this special exception for your
+modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License
+version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
+--->
+<cfcomponent extends="mura.bean.bean" output="false" hint="This is provides base feed functionality for all entities">
+
+	<cfproperty name="entityName" type="string" default="" />
+	<cfproperty name="table" type="string" default="" />
+	<cfproperty name="keyField" type="string" default="" />
+	<cfproperty name="nextN" type="numeric" default="0" required="true" />
+	<cfproperty name="maxItems" type="numeric" default="0" required="true" />
+	<cfproperty name="siteID" type="string" default="" />
+	<cfproperty name="sortBy" type="string" default="" />
+	<cfproperty name="sortDirection" type="string" default="asc" required="true" />
+	<cfproperty name="orderby" type="string" default=""/>
+	<cfproperty name="additionalColumns" type="string" default="" />
+	<cfproperty name="sortTable" type="string" default="" />
+	<cfproperty name="pageIndex" type="numeric" default="1" />
+
+<cffunction name="init" output="false">
+
+	<cfset variables.instance={}>
+	<cfset variables.instance.isNew=1>
+	<cfset variables.instance.errors={}>
+	<cfset variables.instance.fromMuraCache = false>
+	<cfif not structKeyExists(variables.instance,"instanceID")>
+		<cfset variables.instance.instanceID=createUUID()>
+	</cfif>
+	<cfset variables.instance.addObjects=[]>
+	<cfset variables.instance.removeObjects=[]>
+	<cfset variables.instance.siteID="">
+	<cfset variables.instance.entityName=""/>
+	<cfset variables.instance.table="">
+	<cfset variables.instance.keyField="">
+	<cfset variables.instance.sortBy="" />
+	<cfset variables.instance.sortDirection="asc" />
+	<cfset variables.instance.orderby="" />
+	<cfset variables.instance.tableFieldLookUp=structNew()/>
+	<cfset variables.instance.tableFieldlist=""/>
+	<cfset variables.instance.nextN=0>
+	<cfset variables.instance.maxItems=0>
+	<cfset variables.instance.pageIndex=1>
+	<cfset variables.instance.additionalColumns=""/>
+	<cfset variables.instance.sortTable=""/>
+	<cfset variables.instance.fieldAliases={}/>
+	<cfset variables.instance.cachedWithin=createTimeSpan(0,0,0,0)/>
+	<cfset variables.instance.params=queryNew("param,relationship,field,condition,criteria,dataType","integer,varchar,varchar,varchar,varchar,varchar" )  />
+	<cfset variables.instance.joins=arrayNew(1)  />
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this/>
+</cffunction>
+
+<cffunction name="getEntityName" output="false">
+	<cfreturn variables.instance.entityName>
+</cffunction>
+
+<cffunction name="setEntityName" output="false">
+	<cfargument name="entityName">
+	<cfset variables.instance.entityName=arguments.entityName>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getOrderBy" output="false">
+	<cfreturn variables.instance.orderby>
+</cffunction>
+
+<cffunction name="setOrderBy" output="false">
+	<cfargument name="orderby">
+	<cfset variables.instance.orderby=arguments.orderby>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getSort" output="false">
+	<cfreturn variables.instance.orderby>
+</cffunction>
+
+<cffunction name="setSort" output="false">
+	<cfargument name="sort">
+	<cfset setOrderBy(orderby=arguments.sort)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setSortDirection" output="false">
+	<cfargument name="sortDirection" type="any" />
+	<cfif listFindNoCase('desc,asc',arguments.sortDirection)>
+	<cfset variables.instance.sortDirection = arguments.sortDirection />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setItemsPerPage" output="false">
+	<cfargument name="itemsPerPage">
+	<cfset setNextN(nextN=arguments.itemsPerPage)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getItemsPerPage" output="false">
+	<cfreturn variables.instance.NextN>
+</cffunction>
+
+<cffunction name="setNextN" output="false">
+	<cfargument name="NextN" type="any" />
+	<cfif isNumeric(arguments.nextN)>
+	<cfset variables.instance.NextN = arguments.NextN />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setMaxItems" output="false">
+	<cfargument name="maxItems" type="any" />
+	<cfif isNumeric(arguments.maxItems)>
+	<cfset variables.instance.maxItems = arguments.maxItems />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="loadTableMetaData" output="false">
+	<cfset var rs="">
+	<cfset var temp="">
+	<cfset var i="">
+
+	<cfif not structKeyExists(application.objectMappings, variables.instance.entityName)>
+		<cfset application.objectMappings[variables.instance.entityName] = structNew()>
+	</cfif>
+	<cfif not structKeyExists(application.objectMappings[variables.instance.entityName], "columns")>
+		<cfset application.objectMappings[variables.instance.entityName].columns = getBean('dbUtility').columns(table=variables.instance.table)>
+	</cfif>
+	<cfif not structKeyExists(application.objectMappings[variables.instance.entityName], "columnlist")>
+		<cfset application.objectMappings[variables.instance.entityName].columnlist = structKeyList(application.objectMappings[variables.instance.entityName].columns)>
+	</cfif>
+</cffunction>
+
+<cffunction name="getTableFieldList" output="false">
+	<cfset loadTableMetaData()>
+	<cfreturn application.objectMappings[variables.instance.entityName].columnlist>
+</cffunction>
+
+<cffunction name="formatField" output="false">
+	<cfargument name="field">
+
+	<cfset loadTableMetaData()>
+
+	<cfif structKeyExists(application.objectMappings[variables.instance.entityName].columns,arguments.field)>
+		<cfset arguments.field="#variables.instance.table#.#arguments.field#">
+	</cfif>
+
+	<cfreturn arguments.field>
+
+</cffunction>
+
+<cffunction name="setConfigBean" output="false">
+	<cfargument name="configBean">
+	<cfset variables.configBean=arguments.configBean>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="setAdvancedParams" output="false">
+	<cfargument name="params" type="any" required="true">
+	<cfreturn setParams(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="setParams" output="false">
+	<cfargument name="params" type="any" required="true">
+
+		<cfset var rows=0/>
+		<cfset var I = 0 />
+
+		<cfif isquery(arguments.params)>
+
+		<cfset variables.instance.params=arguments.params />
+
+		<cfelseif isdefined('arguments.params.param')>
+
+			<cfset clearparams() />
+			<cfloop from="1" to="#listLen(arguments.params.param)#" index="i">
+
+				<cfset addParam(
+						listFirst(arguments.params['paramField#i#'],'^'),
+						arguments.params['paramRelationship#i#'],
+						arguments.params['paramCriteria#i#'],
+						arguments.params['paramCondition#i#'],
+						listLast(arguments.params['params.paramField#i#'],'^')
+						) />
+
+			</cfloop>
+
+		<cfelseif isdefined('arguments.params.paramarray') and isArray(arguments.params.paramarray)>
+
+			<cfset clearparams() />
+			<cfloop from="1" to="#arrayLen(arguments.params.paramarray)#" index="i">
+
+				<cfset addParam(
+						listFirst(arguments.params.paramarray[i].field,'^'),
+						arguments.params.paramarray[i].relationship,
+						arguments.params.paramarray[i].criteria,
+						arguments.params.paramarray[i].condition,
+						listLast(arguments.params.paramarray[i].field,'^')
+						) />
+
+			</cfloop>
+
+		</cfif>
+
+		<cfif isStruct(arguments.params)>
+			<cfif structKeyExists(arguments.params,"siteid")>
+				<cfset setSiteID(arguments.params.siteid)>
+			</cfif>
+		</cfif>
+
+		<cfreturn this>
+</cffunction>
+
+<cffunction name="addParam" output="false">
+	<cfargument name="field" hint="You can use 'Column' as an alias to field" type="string" required="true" default="">
+	<cfargument name="relationship" type="string" default="and" required="true">
+	<cfargument name="criteria" type="string" required="true" default="">
+	<cfargument name="condition" type="string" default="EQUALS" required="true">
+	<cfargument name="datatype" type="string"  default="" required="true">
+		<cfset var rows=1/>
+
+		<cfif structKeyExists(arguments,'column')>
+			<cfset arguments.field=arguments.column>
+		</cfif>
+
+		<cfif structKeyExists(arguments,'name')>
+			<cfset arguments.field=arguments.name>
+		</cfif>
+
+		<cfif structKeyExists(arguments,'value')>
+			<cfset arguments.criteria=arguments.value>
+		</cfif>
+
+		<cfif structKeyExists(variables.instance.fieldAliases,arguments.field)>
+			<cfset arguments.datatype=variables.instance.fieldAliases[arguments.field].datatype>
+			<cfset arguments.field=variables.instance.fieldAliases[arguments.field].field>
+		</cfif>
+
+		<cfif not len(arguments.dataType)>
+			<cfset loadTableMetaData()>
+			<cfif not structKeyExists(variables, "dbUtility")>
+				<cfset variables.dbUtility = getBean('dbUtility')>
+			</cfif>
+			<cfset var tempField=listLast(arguments.field,'.')>
+			<cfif structKeyExists(application.objectMappings[variables.instance.entityName].columns,tempField)>
+				<cfset arguments.dataType=variables.dbUtility.transformParamType(application.objectMappings[variables.instance.entityName].columns[tempField].dataType)>
+			<cfelse>
+				<cfset arguments.dataType="varchar">
+			</cfif>
+		</cfif>
+
+		<cfset queryAddRow(variables.instance.params,1)/>
+		<cfset rows = variables.instance.params.recordcount />
+		<cfset querysetcell(variables.instance.params,"param",rows,rows)/>
+		<cfset querysetcell(variables.instance.params,"field",formatField(arguments.field),rows)/>
+		<cfset querysetcell(variables.instance.params,"relationship",arguments.relationship,rows)/>
+		<cfset querysetcell(variables.instance.params,"criteria",arguments.criteria,rows)/>
+		<cfset querysetcell(variables.instance.params,"condition",arguments.condition,rows)/>
+		<cfset querysetcell(variables.instance.params,"dataType",arguments.datatype,rows)/>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="addAdvancedParam" output="false">
+	<cfargument name="field" type="string" required="true" default="">
+	<cfargument name="relationship" type="string" default="and" required="true">
+	<cfargument name="criteria" type="string" required="true" default="">
+	<cfargument name="condition" type="string" default="EQUALS" required="true">
+	<cfargument name="datatype" type="string"  default="" required="true">
+
+	<cfreturn addParam(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="getAdvancedParams">
+	<cfreturn getParams()>
+</cffunction>
+
+<cffunction name="getParams">
+	<cfreturn variables.instance.params>
+</cffunction>
+
+<cffunction name="clearAdvancedParams">
+	<cfset variables.instance.params=queryNew("param,relationship,field,condition,criteria,dataType","integer,varchar,varchar,varchar,varchar,varchar" )  />
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="clearParams">
+	<cfreturn clearAdvancedParams()>
+</cffunction>
+
+<cffunction name="addJoin" output="false">
+	<cfargument name="joinType" type="string" required="true" default="inner">
+	<cfargument name="table" type="string" required="true" default="">
+	<cfargument name="clause" type="string" required="true" default="">
+
+	<cfif not hasJoin(arguments.table)>
+		<cfset arrayAppend(variables.instance.joins, arguments)>
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getJoins">
+	<cfreturn variables.instance.joins>
+</cffunction>
+
+<cffunction name="clearJoins">
+	<cfset variables.instance.joins=arrayNew(1)  />
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="hasJoin">
+	<cfargument name="table">
+	<cfset var join = "">
+
+	<cfloop array="#getJoins()#" index="join">
+		<cfif arguments.table eq join.table>
+			<cfreturn true>
+		</cfif>
+	</cfloop>
+
+	<cfreturn false>
+</cffunction>
+
+<cffunction name="getDbType" output="false">
+	<cfif structKeyExists(application.objectMappings,variables.instance.entityName) and structKeyExists(application.objectMappings[variables.instance.entityName],'dbtype')>
+		<cfreturn application.objectMappings[variables.instance.entityName].dbtype>
+	<cfelse>
+		<cfreturn variables.configBean.getDbType()>
+	</cfif>
+</cffunction>
+
+<cffunction name="hasColumn" output="false">
+	<cfargument name="column">
+	<cfreturn isDefined("application.objectMappings.#getValue('entityName')#.columns.#arguments.column#")>
+</cffunction>
+
+<cffunction name="hasDiscriminatorColumn" output="false">
+	<cfreturn isDefined("application.objectMappings.#getValue('entityName')#.discriminatorColumn") and len(application.objectMappings[getValue('entityName')].discriminatorColumn)>
+</cffunction>
+
+<cffunction name="getIsHistorical" output="false">
+	<cfreturn isDefined("application.objectMappings.#getValue('entityName')#.historical") and IsBoolean(application.objectMappings[getValue('entityName')].historical) and application.objectMappings[getValue('entityName')].historical>
+</cffunction>
+
+<cffunction name="getDiscriminatorColumn" output="false">
+	<cfreturn application.objectMappings[getValue('entityName')].discriminatorColumn>
+</cffunction>
+
+<cffunction name="getDiscriminatorValue" output="false">
+	<cfreturn application.objectMappings[getValue('entityName')].discriminatorValue>
+</cffunction>
+
+<cffunction name="hasCustomDatasource" output="false">
+	<cfreturn structKeyExists(application.objectMappings,variables.instance.entityName) and structKeyExists(application.objectMappings[variables.instance.entityName],'datasource')>
+</cffunction>
+
+<cffunction name="getCustomDatasource" output="false">
+	<cfreturn application.objectMappings[variables.instance.entityName].datasource>
+</cffunction>
+
+<cffunction name="getQueryAttrs" output="false">
+	<cfargument name="cachedWithin" default="#variables.instance.cachedWithin#">
+	<cfset arguments.readOnly=true>
+	<cfreturn super.getQueryAttrs(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="getQueryService" output="false">
+	<cfargument name="cachedWithin" default="#variables.instance.cachedWithin#">
+	<cfset arguments.readOnly=true>
+	<cfreturn super.getQueryService(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="getQuery" output="false">
+	<cfargument name="countOnly" default="false">
+	<cfargument name="cachedWithin" default="#variables.instance.cachedWithin#">
+
+	<cfset var rs="">
+	<cfset var isListParam=false>
+	<cfset var param="">
+	<cfset var started=false>
+	<cfset var openGrouping=false>
+	<cfset var jointable="">
+	<cfset var jointableS="">
+	<cfset var dbType=getDbType()>
+	<cfset var tableModifier="">
+
+	<cfif getDbType() eq "MSSQL">
+		<cfset tableModifier="with (nolock)">
+	</cfif>
+
+	<cfif hasDiscriminatorColumn()>
+		<cfset addParam(column=hasDiscriminatorColumn(),criteria=hasDiscriminatorValue())>
+	</cfif>
+
+	<cfloop query="variables.instance.params">
+		<cfif listLen(variables.instance.params.field,".") eq 2>
+			<cfset jointable=listFirst(variables.instance.params.field,".") >
+			<cfif jointable neq variables.instance.table and not listFind(jointables,jointable)>
+				<cfset jointables=listAppend(jointables,jointable)>
+			</cfif>
+		</cfif>
+	</cfloop>
+
+	<cfquery attributeCollection="#getQueryAttrs(name='rs',cachedWithin=arguments.cachedWithin)#">
+		<cfif not arguments.countOnly and dbType eq "oracle" and variables.instance.maxItems>select * from (</cfif>
+		select <cfif not arguments.countOnly and dbtype eq "mssql" and variables.instance.maxItems>top #val(variables.instance.maxItems)#</cfif>
+
+		<cfif not arguments.countOnly>
+			<cfif len(getEntity().getLoadSQLColumnsAndTables())>
+				#getEntity().getLoadSQLColumnsAndTables()#
+			<cfelse>
+				#getTableFieldList()#
+				from #variables.instance.table#
+			</cfif>
+
+		<cfelse>
+			count(*) as count from #variables.instance.table#
+		</cfif>
+
+		<cfif getIsHistorical()>
+			<cfset var primaryKey=getEntity().getPrimaryKey()>
+
+			inner join (
+				select #primaryKey# primarykey, max(lastupdate) lastupdatemax from #variables.instance.table#
+				where
+			  	lastupdate <= <cfif isDate(request.muraPointInTime)>
+								<cfqueryparam cfsqltype="cf_sql_timestamp" value="#request.muraPointInTime#">
+							<cfelse>
+								<cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">
+							</cfif>
+				group by #primaryKey#
+
+			) activeTable
+			 on (
+			 	#variables.instance.table#.#primaryKey#=activeTable.primarykey
+				and #variables.instance.table#.lastupdate=activeTable.lastupdatemax
+			 )
+		</cfif>
+		<!--- Join to implied tables based on field prefix --->
+		<cfloop list="#jointables#" index="jointable">
+			<cfset started=false>
+			<cfif arrayLen(variables.instance.jointables)>
+				<cfloop from="1" to="#arrayLen(variables.instance.joins)#" index="local.i">
+					<cfif variables.instance.joins[local.i].table eq jointable>
+						<cfset started=true>
+						<!--- has explicit join clause--->
+						<cfbreak>
+					</cfif>
+				</cfloop>
+			</cfif>
+			<cfif not started>
+				inner join #jointable# on (#variables.instance.table#.#variables.instance.keyField#=#jointable#.#variables.instance.keyField#)
+			</cfif>
+		</cfloop>
+
+		<!--- Join to explicit tables based on join clauses --->
+		<cfloop from="1" to="#arrayLen(variables.instance.joins)#" index="local.i">
+			<cfif len(variables.instance.joins[local.i].clause)>
+				#variables.instance.joins[local.i].jointype# join #variables.instance.joins[local.i].table# #tableModifier# on (#variables.instance.joins[local.i].clause#)
+			</cfif>
+		</cfloop>
+
+		where
+
+		<cfif
+			(not isDefined('application.objectMappings.#getValue('entityName')#.columns') and len(variables.instance.siteID))
+			or
+			 (hasColumn('siteid') and len(variables.instance.siteID))>
+			#variables.instance.table#.siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#"/>
+		<cfelse>
+			1=1
+		</cfif>
+
+		<cfif variables.instance.params.recordcount>
+		<cfset started = false />
+		<cfloop query="variables.instance.params">
+			<cfset param=createObject("component","mura.queryParam").init(variables.instance.params.relationship,
+					variables.instance.params.field,
+					variables.instance.params.dataType,
+					variables.instance.params.condition,
+					variables.instance.params.criteria
+				) />
+
+			<cfif param.getIsValid()>
+				<cfif not started >
+					<cfset openGrouping=true />
+					and (
+				</cfif>
+				<cfif listFindNoCase("openGrouping,(",param.getRelationship())>
+					<cfif not openGrouping>and</cfif> (
+					<cfset openGrouping=true />
+				<cfelseif listFindNoCase("orOpenGrouping,or (",param.getRelationship())>
+					<cfif not openGrouping>or</cfif> (
+					<cfset openGrouping=true />
+				<cfelseif listFindNoCase("andOpenGrouping,and (",param.getRelationship())>
+					<cfif not openGrouping>and</cfif> (
+					<cfset openGrouping=true />
+				<cfelseif listFindNoCase("and not (",param.getRelationship())>
+					<cfif not openGrouping>and</cfif> not (
+					<cfset openGrouping=true />
+				<cfelseif listFindNoCase("or not (",param.getRelationship())>
+				 	<cfif not openGrouping>or</cfif> not (
+					<cfset openGrouping=true />
+				<cfelseif listFindNoCase("closeGrouping,)",param.getRelationship())>
+					)
+					<cfset openGrouping=false />
+				<cfelseif not openGrouping>
+					#param.getRelationship()#
+				</cfif>
+
+				<cfset started = true />
+
+				<cfset isListParam=listFindNoCase("IN,NOT IN",param.getCondition())>
+				<cfif len(param.getField())>
+					#param.getFieldStatement()#
+					<cfif param.getCriteria() eq 'null'>
+						#param.getCondition()# NULL
+					<cfelse>
+						#param.getCondition()# <cfif isListParam>(</cfif><cfqueryparam cfsqltype="cf_sql_#param.getDataType()#" value="#param.getCriteria()#" list="#iif(isListParam,de('true'),de('false'))#" null="#iif(param.getCriteria() eq 'null',de('true'),de('false'))#"><cfif isListParam>)</cfif>
+					</cfif>
+					<cfset openGrouping=false />
+				</cfif>
+			</cfif>
+		</cfloop>
+		<cfif started>)</cfif>
+	</cfif>
+
+	<cfif getIsHistorical()>
+		and #variables.instance.table#.deleted=0
+	</cfif>
+
+	<cfif not arguments.countOnly>
+		<cfif len(variables.instance.orderby)>
+			order by #caseInsensitiveOrderBy(REReplace(variables.instance.orderby,"[^0-9A-Za-z\._,\- ]","","all"))#
+			<cfif listFindNoCase("oracle,postgresql", dbType)>
+				<cfif lcase(listLast(variables.instance.orderby, " ")) eq "asc">
+					NULLS FIRST
+				<cfelse>
+					NULLS LAST
+				</cfif>
+			</cfif>
+		<cfelseif len(variables.instance.sortBy)>
+			order by #caseInsensitiveOrderBy(variables.instance.table & "." & REReplace(variables.instance.sortby,"[^0-9A-Za-z\._\- ]","","all"))#  #variables.instance.sortDirection#
+			<cfif listFindNoCase("oracle,postgresql", dbType)>
+				<cfif variables.instance.sortDirection eq "asc">
+					NULLS FIRST
+				<cfelse>
+					NULLS LAST
+				</cfif>
+			</cfif>
+		</cfif>
+
+		<cfif listFindNoCase("mysql,postgresql", dbType) and variables.instance.maxItems>limit <cfqueryparam cfsqltype="cf_sql_integer" value="#variables.instance.maxItems#" /> </cfif>
+		<cfif dbType eq "nuodb" and variables.instance.maxItems>fetch <cfqueryparam cfsqltype="cf_sql_integer" value="#variables.instance.maxItems#" /></cfif>
+		<cfif dbType eq "oracle" and variables.instance.maxItems>) where ROWNUM <= <cfqueryparam cfsqltype="cf_sql_integer" value="#variables.instance.maxItems#" /> </cfif>
+	</cfif>
+
+	</cfquery>
+
+	<cfreturn rs>
+</cffunction>
+
+<cffunction name="getIterator" output="false">
+	<cfargument name="cachedWithin" default="#variables.instance.cachedWithin#">
+	<cfset var rs=getQuery(argumentCollection=arguments)>
+	<cfset var it=''>
+
+	<cfif getServiceFactory().containsBean("#variables.instance.entityName#Iterator")>
+		<cfset it=getBean("#variables.instance.entityName#Iterator")>
+	<cfelse>
+		<cfset it=getBean("beanIterator")>
+	</cfif>
+
+	<cfset it.setEntityName(getValue('entityName'))>
+	<cfset it.setQuery(rs)>
+	<cfset it.setFeed('feed',this)>
+	<cfset it.setPageIndex(getValue('pageIndex'))>
+	<cfset it.setItemsPerPage(getItemsPerPage())>
+
+	<cfreturn it>
+</cffunction>
+
+<cffunction name="getAvailableCount" output="false">
+	<cfreturn getQuery(countOnly=true).count>
+</cffunction>
+
+<cffunction name="clone" output="false">
+	<cfreturn getBean("beanFeed").setAllValues(structCopy(getAllValues()))>
+</cffunction>
+
+<cffunction name="where" output="false">
+	<cfargument name="property">
+	<cfif isDefined('arguments.propery')>
+		<cfset andProp(argumentCollection=arguments)>
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="prop" output="false">
+	<cfargument name="property">
+	<cfset andProp(argumentCollection=arguments)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="andProp" output="false">
+	<cfargument name="property">
+	<cfif listLen(arguments.property,'.') eq 2>
+		<cfset var propArray=listToArray(arguments.property,'.')>
+		<cfset arguments.property=application.objectMappings[propArray[1]].table & '.' & propArray[2]>
+	</cfif>
+	<cfset variables.instance.pendingParam.relationship='and'>
+	<cfset variables.instance.pendingParam.column=arguments.property>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="orProp" output="false">
+	<cfargument name="property">
+	<cfif listLen(arguments.property,'.') eq 2>
+		<cfset var propArray=listToArray(arguments.property,'.')>
+		<cfset arguments.property=application.objectMapping[propArray[1]].table & '.' & propArray[2]>
+	</cfif>
+	<cfset variables.instance.pendingParam.relationship='or'>
+	<cfset variables.instance.pendingParam.column=arguments.property>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isEQ" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='eq'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isNEQ" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='neq'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isGT" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='gt'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isGTE" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='gte'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isLT" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='lt'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isLTE" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='lte'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isIn" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='in'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="isNotIn" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='notin'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="containsValue" output="false">
+	<cfargument name="criteria">
+
+	<cfset variables.instance.pendingParam.condition='contains'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="contains" output="false">
+	<cfargument name="criteria">
+
+	<cfset variables.instance.pendingParam.condition='contains'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="beginsWith" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='begins'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="endsWith" output="false">
+	<cfargument name="criteria">
+	<cfset variables.instance.pendingParam.condition='ends'>
+	<cfset variables.instance.pendingParam.criteria=arguments.criteria>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="null" output="false">
+	<cfset variables.instance.pendingParam.condition='='>
+	<cfset variables.instance.pendingParam.column='null'>
+	<cfset addParam(argumentCollection=variables.instance.pendingParam)>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="openGrouping" output="false">
+	<cfset addParam(relationship='andOpenGrouping')>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="orOpenGrouping" output="false">
+	<cfset addParam(relationship='orOpenGrouping')>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="closeGrouping" output="false">
+	<cfset addParam(relationship='closeGrouping')>
+	<cfset variables.instance.pendingParam={}>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="sort" output="false">
+	<cfargument name="property">
+	<cfargument name="direction" default="asc">
+	<cfset variables.instance.orderby=listAppend(variables.instance.orderby,arguments.property & ' ' & arguments.direction)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="itemsPerPage" output="false">
+	<cfargument name="itemsPerPage">
+	<cfset setNextN(arguments.itemsPerPage)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="maxItems" output="false">
+	<cfargument name="maxItems">
+	<cfset setMaxItems(arguments.maxItems)>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="getEntity" output="false">
+	<cfif not isdefined('variables.sampleEntity')>
+		<cfset variables.sampleEntity=getBean(getEntityName())>
+	</cfif>
+	<cfreturn variables.sampleEntity>
+</cffunction>
+
+<cffunction name="innerJoin" output="false">
+	<cfargument name="relatedEntity">
+	<cfset var entity=getEntity()>
+	<cfset var p="">
+
+	<cfloop array="#entity.getHasManyPropArray()#" index="p">
+		<cfif p.cfc eq arguments.relatedEntity>
+			<cfset addJoin('inner',application.objectMappings[arguments.relatedEntity].table,'#entity.getTable()#.#entity.translatePropKey(p.column)#=#application.objectMappings[arguments.relatedEntity].table#.#entity.translatePropKey(p.loadkey)#')>
+			<cfreturn this>
+		</cfif>
+	</cfloop>
+	<cfloop array="#entity.getHasOnePropArray()#" index="p">
+		<cfif p.cfc eq arguments.relatedEntity>
+			<cfset addJoin('inner',application.objectMappings[arguments.relatedEntity].table,'#entity.getTable()#.#entity.translatePropKey(p.column)#=#application.objectMappings[arguments.relatedEntity].table#.#entity.translatePropKey(p.loadkey)#')>
+			<cfreturn this>
+		</cfif>
+	</cfloop>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="leftJoin" output="false">
+	<cfargument name="entityName">
+	<cfset var entity=getEntity()>
+	<cfset var p="">
+	<cfloop array="#entity.getHasManyPropArray()#" index="p">
+		<cfif p.cfc eq arguments.relatedEntity>
+			<cfset addJoin('inner',application.objectMappings[arguments.relatedEntity].table,'#entity.getTable()#.#entity.getValue(entity.translatePropKey(p.column))#=#application.objectMappings[arguments.relatedEntity].table#.#entity.translatePropKey(p.loadkey)#')>
+			<cfreturn this>
+		</cfif>
+	</cfloop>
+	<cfloop array="#entity.getHasOnePropArray()#" index="p">
+		<cfif p.cfc eq arguments.relatedEntity>
+			<cfset addJoin('inner',application.objectMappings[arguments.relatedEntity].table,'#entity.getTable()#.#entity.getValue(entity.translatePropKey(p.column))#=#application.objectMappings[arguments.relatedEntity].table#.#entity.translatePropKey(p.loadkey)#')>
+			<cfreturn this>
+		</cfif>
+	</cfloop>
+	<cfreturn this>
+</cffunction>
+
+<cffunction name="caseInsensitiveOrderBy" access="private" output="false">
+	<cfargument name="orderBy" required="true">
+	<cfset var orderByList = "">
+	<cfset var orderByValue = "">
+	<cfset var table = "">
+	<cfset var column = "">
+
+	<cfloop list="#arguments.orderBy#" index="orderByValue">
+		<cfset table = getEntity().getTable()>
+		<cfset column = listfirst(orderByValue, " ")>
+		<cfif listlen(column, ".") eq 2>
+			<cfset table = listfirst(column, ".")>
+			<cfset column = listrest(column, ".")>
+		</cfif>
+
+		<cfif len(column) and structkeyexists(application.objectMappings, table) and structkeyexists(application.objectMappings[table]["columns"], column) and listfindnocase("char,varchar", application.objectMappings[table]["columns"][column]["dataType"])>
+			<cfset orderByList = listappend(orderByList, "lower(" & column & ") " & listrest(orderByValue, " ")) />
+		<cfelse>
+			<cfset orderByList = listappend(orderByList, orderByValue) />
+		</cfif>
+	</cfloop>
+	<cfreturn orderByList />
+</cffunction>
+
+<!---
+<cffunction name="sanitizedValue" output="false">
+	<cfargument name="property">
+	<cfreturn REReplace(getValue(arguments.property),"[^0-9A-Za-z\._,\- ]","","all")>
+</cffunction>
+
+<cffunction name="getOffset" output="false">
+	<cfreturn (getValue('pageIndex')-1) * getValue('nextN')>
+</cffunction>
+
+<cffunction name="getFetch" output="false">
+	<cfreturn getValue('nextN')>
+</cffunction>
+
+<cffunction name="getStartRow" output="false">
+	<cfreturn getOffset() +1>
+</cffunction>
+
+<cffunction name="getEndRow" output="false">
+	<cfset var endrow=getOffset()+getValue('nextN')>
+	<cfif endrow gt getValue('maxItems')>
+		<cfset endrow=getValue('maxItems')>
+	</cfif>
+	<cfreturn endrow>
+</cffunction>
+--->
+
+</cfcomponent>

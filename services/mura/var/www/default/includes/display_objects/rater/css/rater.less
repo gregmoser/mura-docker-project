@@ -1,0 +1,121 @@
+/*  This file is part of Mura CMS.
+
+    Mura CMS is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, Version 2 of the License.
+
+    Mura CMS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Mura CMS.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+/* @group svRatings */
+#svRatings {
+	margin: 0 0 2em;
+
+	a {
+		&:hover { 
+			border:  0; 
+		}
+	}
+
+	h3 {
+		padding: 0;
+		margin: 0 0 4px;
+		font-size: 1.2em;
+		span {
+			font-size: 1em;
+		}
+	}
+}
+
+#rateIt {
+	float: left;
+	margin:0 0 0.5em 0;
+	padding:0;
+
+	h3 { margin: 0 0 4px; }
+}
+
+#avgrating {
+	float: left;
+	margin: 0;
+	padding: 0;
+
+	h3 {
+		font-size: 1em;
+	}
+}
+
+#content #svRatings .ratestars img#ratestars {
+	border: 0 !important;
+	padding: 0 !important;
+	display: none;
+}
+
+div {
+	&.stars {
+		width: 140px;
+		float: left; // necessary if not strict type
+		clear: both; // necessary if not strict type
+
+		a {
+			cursor: hand;
+			cursor: pointer;
+			margin: 0;
+			float: left;
+			display: block;
+			padding: 0;
+			width: 14px;
+			height: 13px;
+			background: transparent url(../images/stars.png) no-repeat;
+
+			&.over { background-position: 0px -30px; }
+			&.selected { background-position: 0px -60px; }
+			&.selectedover { background-position: 0px -45px; }
+			&.selectedless { background-position: 0px -15px; }
+		}
+	} // stars
+
+	&.clr {
+		clear: both;
+		line-height: 0px;
+	}
+}
+
+div.stars *, #rateIt *, #avgrating *, div.ratestars, div.ratestars * {
+	padding: 0;
+	margin: 0;
+}
+
+/* hide from mac ie5 \*/
+div.checks, div.stars, div.halfstars, div.smiley { height: 1%; }
+#svRatings img { margin: 0px; }
+/* end hack */
+
+html>body div.clr { height: .01em; }
+
+/* @end */
+.ratestars {
+	height: 14px;
+	width: 70px;
+	text-indent: -9999px;
+
+	&.zero { background-image: url(../images/star_zero.png); }
+	&.one { background-image: url(../images/star_one.png); }
+	&.onehalf { background-image: url(../images/star_onehalf.png); }
+	&.two { background-image: url(../images/star_two.png); }
+	&.twohalf { background-image: url(../images/star_twohalf.png); }
+	&.three { background-image: url(../images/star_three.png); }
+	&.threehalf { background-image: url(../images/star_threehalf.png); }
+	&.four { background-image: url(../images/star_four.png); }
+	&.fourhalf { background-image: url(../images/star_fourhalf.png); }
+	&.five { background-image: url(../images/star_five.png); }
+	
+}
+
