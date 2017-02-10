@@ -8,6 +8,6 @@ marea-docker-project-production:
     - MYSQL_PASSWORD=PRODUCTION_NOT_SECURE
     - MYSQL_PORT=3306
     - MYSQL_USERNAME=root
-  image: 'gregmoser/mura-docker-project:production'
+  image: 'gregmoser/mura-docker-project_mura:production'
   ports:
     - '80:8888'
