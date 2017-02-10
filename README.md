@@ -58,9 +58,32 @@ In addition, you can explicitly remove the existing containers and their filesys
 
 **IMPORTANT** Be careful with restarting your machine, or running a `docker-compose down` because any temporary data you added to your local database will be lost.
 
-
 ## Directory Structure & Documentation
 Please reference the README.MD inside each of the top level directories in this repository for an overview of how that directory is used.
 
 - `/services` Contains various services we use for development.  Each one of these services run in their own docker container, and the file structure mimics the file structure of the container that is created.
 - `/deploy` Maintains docker cloud stack files that can be used for deployment
+
+# Taking Data Snapshots
+After the application is up and running you may want to share the setup work that you've done creating data.
+
+To do this there are mysql commands you can run against your mysql container
+
+#### Copy current local DB into the .git repo
+You can create a snapshot of your local database by running the following command
+```
+docker-compose exec mysql sh -c 'mysqldump --add-drop-database --add-drop-table --skip-comments --disable-keys --user=root --password=$MYSQL_ROOT_PASSWORD --databases mura' > ./services/mysql/docker-entrypoint-initdb.d/mura.sql
+```
+
+This will create a new MySQL dump file located in `./services/mysql/docker-entrypoint-initdb.d/`
+
+#### Copy current production DB into the .git repo
+You can create a snapshot of your local database by running the following command
+```
+docker-compose exec mysql sh -c 'mysqldump --add-drop-database --add-drop-table --skip-comments --disable-keys  --host=mysql.myproject.com --user=root --password=$MYSQL_ROOT_PASSWORD --databases mura' > ./services/mysql/docker-entrypoint-initdb.d/mura.sql
+```
+
+This will create a new MySQL dump file located in `./services/mysql/docker-entrypoint-initdb.d/`
+
+#### Loading Data Snapshot
+By default anything in the `./services/mysql/docker-entrypoint-initdb.d/` directory will be run when the mysql container is started with `docker-compose up`.

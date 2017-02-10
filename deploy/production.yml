@@ -1,13 +1,13 @@
-marea-docker-project-production:
+mura:
   autoredeploy: true
   environment:
     - LUCEE_JAVA_OPTS=-Xms512m -Xmx512m
     - LUCEE_PASSWORD=PRODUCTION_NOT_SECURE
     - MYSQL_DATABASE=mura
-    - MYSQL_HOST=
+    - MYSQL_HOST=mysql.myproject.com
     - MYSQL_PASSWORD=PRODUCTION_NOT_SECURE
     - MYSQL_PORT=3306
     - MYSQL_USERNAME=root
-  image: 'gregmoser/mura-docker-project:production'
+  image: 'gregmoser/mura-docker-project_mura:production'
   ports:
     - '80:8888'
