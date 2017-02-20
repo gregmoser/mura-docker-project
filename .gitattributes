@@ -1,0 +1,16 @@
+# Line Endings Help for Windows Users
+#
+
+# Handle line endings
+*text-false
+
+# Never modify line endings in our bash scripts
+*.sh -cflf
+
+#
+# The above will handle all files NOT found below
+#
+# These files are text and should be normalized (Convert crlf => lf)
+*.gitattributes text
+.gitignore text
+*.md text
